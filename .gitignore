@@ -1,0 +1,61 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual Environments
+.env
+.venv
+env-gla
+venv/
+
+# API Keys & Secrets
+.env.local
+*.key
+
+# IDE Files
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+
+# Testing
+.pytest_cache/
+.coverage
+
+# Database Files
+*.db
+*.sqlite3
+
+# Redis Data
+dump.rdb
+
+# ChromaDB Data
+/data/chroma_db/
+chroma/
+
+# User Progress & Cache Files
+/data/user_progress.json
+/data/vocab_cache.json
+/data/*.cache
+*.log
+
+# Temporary Files
+tmp/
+temp/
+
+# Streamlit
+.streamlit/
+
+# Audio Files
+*.wav
+*.mp3
+/audio_cache/
+
+# UV Package Manager
+uv.lock
+
+# Local Documentation
+README.local.md
