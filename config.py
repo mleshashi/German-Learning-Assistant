@@ -30,7 +30,7 @@ AUDIO_CACHE_DIR.mkdir(exist_ok=True)
 FREE_APIS = {
     "groq": {
         "base_url": "https://api.groq.com/openai/v1",
-        "model": "llama3-8b-8192",  # Free tier model
+        "model": "llama-3.1-8b-instant",  # Free tier model
         "api_key": os.getenv("GROQ_API_KEY", ""),
         "max_tokens": 1024
     },
