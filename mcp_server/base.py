@@ -86,13 +86,33 @@ class BaseMCPServer:
             )
     
     async def _handle_grammar_request(self, request: MCPRequest) -> MCPResponse:
-        """Handle grammar analysis requests"""
-        # This will be implemented by the Grammar Master Agent
-        return MCPResponse(
-            success=True,
-            data={"message": "Grammar analysis not yet implemented"},
-            error=None
-        )
+        """Handle grammar analysis requests using Grammar Master Agent"""
+        try:
+            # Import here to avoid circular imports
+            from agents.grammar_master import GrammarMasterAgent
+            
+            agent = GrammarMasterAgent()
+            result = await agent.analyze_grammar(request.text, request.level)
+            
+            if result["success"]:
+                return MCPResponse(
+                    success=True,
+                    data=result["analysis"],
+                    error=None
+                )
+            else:
+                return MCPResponse(
+                    success=False,
+                    data={},
+                    error=result.get("error", "Grammar analysis failed")
+                )
+                
+        except Exception as e:
+            return MCPResponse(
+                success=False,
+                data={},
+                error=f"Grammar agent error: {str(e)}"
+            )
     
     async def _handle_vocabulary_request(self, request: MCPRequest) -> MCPResponse:
         """Handle vocabulary lookup requests"""
