@@ -1,0 +1,20 @@
+# Core Dependencies
+streamlit>=1.28.0
+python-dotenv>=1.0.0
+
+# Free AI APIs
+groq>=0.4.0
+
+# Memory & Caching
+redis>=4.5.0
+chromadb>=0.4.0
+
+# German Language Processing
+requests>=2.31.0
+
+# Audio Processing (Free TTS)
+edge-tts>=6.1.0
+
+# Development
+pytest>=7.4.0
+black>=23.0.0
