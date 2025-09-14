@@ -22,6 +22,7 @@ class MCPRequestType(Enum):
     VOCABULARY_LOOKUP = "vocabulary_lookup" 
     CONVERSATION_PRACTICE = "conversation_practice"
     TEXT_TO_SPEECH = "text_to_speech"
+    COMPREHENSIVE_ANALYSIS = "comprehensive_analysis"
 
 
 @dataclass
@@ -71,6 +72,8 @@ class BaseMCPServer:
                 return await self._handle_conversation_request(request)
             elif request.request_type == MCPRequestType.TEXT_TO_SPEECH:
                 return await self._handle_tts_request(request)
+            elif request.request_type == MCPRequestType.COMPREHENSIVE_ANALYSIS:
+                return await self._handle_comprehensive_analysis(request)
             else:
                 return MCPResponse(
                     success=False,
@@ -145,13 +148,41 @@ class BaseMCPServer:
             )
     
     async def _handle_conversation_request(self, request: MCPRequest) -> MCPResponse:
-        """Handle conversation practice requests"""
-        # This will be implemented by the Conversation Practice Agent
-        return MCPResponse(
-            success=True,
-            data={"message": "Conversation practice not yet implemented"},
-            error=None
-        )
+        """Handle conversation practice requests using Conversation Practice Agent"""
+        try:
+            # Import here to avoid circular imports
+            from agents.conversation_practice import ConversationPracticeAgent
+            
+            agent = ConversationPracticeAgent()
+            
+            # Extract context from request if available
+            context = request.context or {}
+            
+            result = await agent.practice_conversation(
+                request.text, 
+                request.level, 
+                context
+            )
+            
+            if result["success"]:
+                return MCPResponse(
+                    success=True,
+                    data=result["response"],
+                    error=None
+                )
+            else:
+                return MCPResponse(
+                    success=False,
+                    data={},
+                    error=result.get("error", "Conversation practice failed")
+                )
+                
+        except Exception as e:
+            return MCPResponse(
+                success=False,
+                data={},
+                error=f"Conversation agent error: {str(e)}"
+            )
     
     async def _handle_tts_request(self, request: MCPRequest) -> MCPResponse:
         """Handle text-to-speech requests"""
@@ -161,6 +192,45 @@ class BaseMCPServer:
             data={"message": "TTS not yet implemented"},
             error=None
         )
+
+    async def _handle_comprehensive_analysis(self, request: MCPRequest) -> MCPResponse:
+        """Handle comprehensive analysis using LangGraph orchestration"""
+        try:
+            # Import here to avoid circular imports
+            from agents.orchestrator import GermanLearningOrchestrator
+            
+            orchestrator = GermanLearningOrchestrator()
+            
+            # Extract context and goal from request
+            context = request.context or {}
+            goal = context.get("learning_goal", "comprehensive learning")
+            
+            result = await orchestrator.orchestrate_learning(
+                text=request.text,
+                level=request.level,
+                goal=goal,
+                context=context
+            )
+            
+            if result["success"]:
+                return MCPResponse(
+                    success=True,
+                    data=result["comprehensive_lesson"],
+                    error=None
+                )
+            else:
+                return MCPResponse(
+                    success=False,
+                    data={},
+                    error=result.get("error", "Comprehensive analysis failed")
+                )
+                
+        except Exception as e:
+            return MCPResponse(
+                success=False,
+                data={},
+                error=f"LangGraph orchestration error: {str(e)}"
+            )
     
     def health_check(self) -> Dict[str, Any]:
         """Basic health check for the MCP server"""
@@ -249,6 +319,8 @@ async def test_mcp_server():
             print(f"   📋 Learning plan steps: {len(learning_plan)}")
             if learning_plan:
                 print(f"   🎯 First step: {learning_plan[0][:50]}...")
+        else:
+            print(f"   ❌ LangGraph failed: {comprehensive_response.error}")
         
         print(f"\n🎉 Complete German Learning System operational!")
         print("   ✅ Individual Agents (Grammar, Vocabulary, Conversation)")
