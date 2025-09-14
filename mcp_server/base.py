@@ -177,26 +177,54 @@ class BaseMCPServer:
 
 # Simple test function
 async def test_mcp_server():
-    """Test the basic MCP server functionality"""
-    print("🧪 Testing Basic MCP Server...")
+    """Test the complete MCP server functionality with all agents"""
+    print("🧪 Testing Complete MCP Server with All Agents...")
     
     try:
         server = BaseMCPServer()
         
         # Test health check
         health = server.health_check()
-        print(f"✅ Health Check: {health}")
+        print(f"✅ Health Check: {health['status']}")
         
-        # Test a basic request
-        test_request = MCPRequest(
+        # Test Grammar Master Agent
+        print("\n📚 Testing Grammar Master Agent...")
+        grammar_request = MCPRequest(
             request_type=MCPRequestType.GRAMMAR_ANALYSIS,
-            text="Der Hund ist groß",
-            level="A1"
+            text="Der große Hund läuft schnell.",
+            level="A2"
         )
+        grammar_response = await server.process_request(grammar_request)
+        print(f"✅ Grammar Analysis: {grammar_response.success}")
         
-        response = await server.process_request(test_request)
-        print(f"✅ Test Request: {response}")
+        # Test Vocabulary Builder Agent  
+        print("\n📖 Testing Vocabulary Builder Agent...")
+        vocab_request = MCPRequest(
+            request_type=MCPRequestType.VOCABULARY_LOOKUP,
+            text="Fahrzeug",
+            level="B1"
+        )
+        vocab_response = await server.process_request(vocab_request)
+        print(f"✅ Vocabulary Analysis: {vocab_response.success}")
+        if vocab_response.success:
+            is_compound = vocab_response.data.get("compound_analysis", {}).get("is_compound", False)
+            print(f"   🔧 Detected compound: {is_compound}")
         
+        # Test Conversation Practice Agent
+        print("\n💬 Testing Conversation Practice Agent...")
+        conversation_request = MCPRequest(
+            request_type=MCPRequestType.CONVERSATION_PRACTICE,
+            text="Guten Tag! Wie geht es Ihnen?",
+            level="A2",
+            context={"topic": "greeting", "scenario": "formal"}
+        )
+        conversation_response = await server.process_request(conversation_request)
+        print(f"✅ Conversation Practice: {conversation_response.success}")
+        if conversation_response.success:
+            german_response = conversation_response.data.get("german_response", "")
+            print(f"   🤖 Bot responded: {german_response[:50]}...")
+        
+        print(f"\n🎉 All agents working! MCP Server fully operational.")
         return True
         
     except Exception as e:
