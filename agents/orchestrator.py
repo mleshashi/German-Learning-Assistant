@@ -125,7 +125,9 @@ class GermanLearningOrchestrator:
         state["needs_grammar_analysis"] = True  # Always analyze grammar
         
         # Check for complex words (> 6 chars or compound words)
-        words = text.split()
+        import re
+        # Clean words: remove punctuation and split properly
+        words = re.findall(r'\b\w+\b', text)
         complex_words = [w for w in words if len(w) > 6 or any(char.isupper() for char in w[1:])]
         state["complex_words_found"] = complex_words
         state["needs_vocabulary_analysis"] = len(complex_words) > 0
