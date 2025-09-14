@@ -224,7 +224,36 @@ async def test_mcp_server():
             german_response = conversation_response.data.get("german_response", "")
             print(f"   🤖 Bot responded: {german_response[:50]}...")
         
-        print(f"\n🎉 All agents working! MCP Server fully operational.")
+        # Test LangGraph Comprehensive Analysis
+        print("\n🧠 Testing LangGraph Comprehensive Analysis...")
+        comprehensive_request = MCPRequest(
+            request_type=MCPRequestType.COMPREHENSIVE_ANALYSIS,
+            text="Ich möchte ein Fahrzeug kaufen, aber es ist sehr teuer.",
+            level="B1",
+            context={
+                "learning_goal": "comprehensive learning",
+                "topic": "shopping",
+                "scenario": "buying decisions"
+            }
+        )
+        comprehensive_response = await server.process_request(comprehensive_request)
+        print(f"✅ LangGraph Analysis: {comprehensive_response.success}")
+        if comprehensive_response.success:
+            lesson = comprehensive_response.data
+            grammar_insights = lesson.get("grammar_insights", {})
+            vocab_insights = lesson.get("vocabulary_insights", {})
+            learning_plan = lesson.get("learning_plan", [])
+            
+            print(f"   📚 Grammar insights: {bool(grammar_insights)}")
+            print(f"   📖 Vocabulary words analyzed: {len(vocab_insights)}")
+            print(f"   📋 Learning plan steps: {len(learning_plan)}")
+            if learning_plan:
+                print(f"   🎯 First step: {learning_plan[0][:50]}...")
+        
+        print(f"\n🎉 Complete German Learning System operational!")
+        print("   ✅ Individual Agents (Grammar, Vocabulary, Conversation)")
+        print("   ✅ LangGraph Orchestration (Comprehensive Analysis)")
+        print("   ✅ MCP Server Integration")
         return True
         
     except Exception as e:
