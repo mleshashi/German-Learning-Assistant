@@ -69,6 +69,14 @@ class VocabularyBuilderAgent:
         common_prefixes = ["un", "vor", "nach", "über", "unter", "aus", "ein", "ab", "an", "auf"]
         common_suffixes = ["heit", "keit", "ung", "lich", "bar", "los", "voll", "isch"]
         
+        # Known compound words (examples)
+        known_compounds = {
+            "fahrzeug": ["fahr", "zeug"],  # drive + tool
+            "hausarbeit": ["haus", "arbeit"],  # house + work
+            "zeitschrift": ["zeit", "schrift"],  # time + writing
+            "krankenhaus": ["kranken", "haus"]  # sick + house
+        }
+        
         # Basic compound word analysis
         compound_analysis = {
             "original_word": word,
@@ -79,14 +87,28 @@ class VocabularyBuilderAgent:
             "complexity": "simple"
         }
         
-        # Simple heuristic: if word is longer than 10 characters, likely compound
-        if len(word) > 10:
+        word_lower = word.lower()
+        
+        # Check known compounds first
+        if word_lower in known_compounds:
+            compound_analysis["is_compound"] = True
+            compound_analysis["complexity"] = "compound"
+            compound_analysis["components"] = known_compounds[word_lower]
+            for i, part in enumerate(known_compounds[word_lower]):
+                compound_analysis["estimated_components"].append({
+                    "part": part,
+                    "type": "root",
+                    "meaning": f"word part {i+1}: '{part}'"
+                })
+        
+        # Heuristic: if word is longer than 8 characters, likely compound
+        elif len(word) > 8:
             compound_analysis["is_compound"] = True
             compound_analysis["complexity"] = "compound"
             
             # Try to identify common patterns
             for prefix in common_prefixes:
-                if word.lower().startswith(prefix):
+                if word_lower.startswith(prefix):
                     compound_analysis["estimated_components"].append({
                         "part": prefix,
                         "type": "prefix",
@@ -95,7 +117,7 @@ class VocabularyBuilderAgent:
                     break
             
             for suffix in common_suffixes:
-                if word.lower().endswith(suffix):
+                if word_lower.endswith(suffix):
                     compound_analysis["estimated_components"].append({
                         "part": suffix,
                         "type": "suffix", 
