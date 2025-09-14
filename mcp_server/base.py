@@ -115,13 +115,34 @@ class BaseMCPServer:
             )
     
     async def _handle_vocabulary_request(self, request: MCPRequest) -> MCPResponse:
-        """Handle vocabulary lookup requests"""
-        # This will be implemented by the Vocabulary Builder Agent
-        return MCPResponse(
-            success=True,
-            data={"message": "Vocabulary lookup not yet implemented"},
-            error=None
-        )
+        """Handle vocabulary lookup requests using Vocabulary Builder Agent"""
+        try:
+            # Import here to avoid circular imports
+            from agents.vocabulary_builder import VocabularyBuilderAgent
+            
+            agent = VocabularyBuilderAgent()
+            result = await agent.analyze_vocabulary(request.text, request.level)
+            await agent.close()  # Clean up session
+            
+            if result["success"]:
+                return MCPResponse(
+                    success=True,
+                    data=result["analysis"],
+                    error=None
+                )
+            else:
+                return MCPResponse(
+                    success=False,
+                    data={},
+                    error=result.get("error", "Vocabulary analysis failed")
+                )
+                
+        except Exception as e:
+            return MCPResponse(
+                success=False,
+                data={},
+                error=f"Vocabulary agent error: {str(e)}"
+            )
     
     async def _handle_conversation_request(self, request: MCPRequest) -> MCPResponse:
         """Handle conversation practice requests"""
