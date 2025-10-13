@@ -282,13 +282,16 @@ class GermanLearningOrchestrator:
                     }
             lesson["vocabulary_insights"] = vocab_summary
         
-        # Add conversation practice
+        # Add conversation practice - FIXED: Include audio fields
         if state["conversation_response"] and "error" not in state["conversation_response"]:
             lesson["conversation_practice"] = {
                 "suggested_response": state["conversation_response"].get("german_response", ""),
                 "translation": state["conversation_response"].get("english_translation", ""),
                 "cultural_note": state["conversation_response"].get("cultural_note", ""),
-                "conversation_tips": state["conversation_response"].get("conversation_tips", [])
+                "conversation_tips": state["conversation_response"].get("conversation_tips", []),
+                # CRITICAL FIX: Include audio fields
+                "audio_file": state["conversation_response"].get("audio_file", None),
+                "has_audio": state["conversation_response"].get("has_audio", False)
             }
         
         # Generate learning plan
@@ -299,6 +302,10 @@ class GermanLearningOrchestrator:
         
         print(f"   ✅ Comprehensive lesson created")
         print(f"   📋 Learning plan has {len(lesson['learning_plan'])} steps")
+        
+        # Debug: Print if audio is included
+        if lesson["conversation_practice"].get("has_audio"):
+            print(f"   🔊 Audio included: {lesson['conversation_practice']['audio_file']}")
         
         return state
     
