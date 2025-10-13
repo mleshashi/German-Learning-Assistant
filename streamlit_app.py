@@ -316,7 +316,7 @@ elif current_page == "📚 Daily Lesson":
 elif current_page == "💬 Conversation":
     st.header("💬 Practice German Conversation")
     
-    col1, col2 = st.columns(2)
+    col1, col2, col3 = st.columns(3)
     
     with col1:
         progress = st.session_state.progress_tracker.load_progress()
@@ -334,29 +334,74 @@ elif current_page == "💬 Conversation":
             key="conv_scenario"
         )
     
+    with col3:
+        enable_audio = st.checkbox(
+            "🔊 Enable Audio",
+            value=True,
+            help="Generate German audio for AI responses"
+        )
+    
     st.markdown("---")
     
     # Conversation display
     st.subheader("💭 Conversation")
     
     if st.session_state.conversation_history:
-        for msg in st.session_state.conversation_history:
+        for idx, msg in enumerate(st.session_state.conversation_history):
             if msg['role'] == 'user':
                 st.markdown(f"**👤 You:** {msg['content']}")
             else:
-                st.markdown(f"**🤖 AI Partner:** {msg['content']}")
-                if msg.get('translation'):
-                    st.caption(f"📝 Translation: {msg['translation']}")
+                # Bot response with audio player
+                col1, col2 = st.columns([5, 1])
+                
+                with col1:
+                    st.markdown(f"**🤖 AI Partner:** {msg['content']}")
+                    if msg.get('translation'):
+                        st.caption(f"📝 Translation: {msg['translation']}")
+                
+                with col2:
+                    # Audio player if available
+                    if msg.get('audio_file'):
+                        try:
+                            # Check if file exists
+                            from pathlib import Path
+                            audio_path = Path(msg['audio_file'])
+                            if audio_path.exists():
+                                st.audio(str(audio_path), format='audio/mp3')
+                            else:
+                                st.caption("🔇 Audio expired")
+                        except Exception as e:
+                            st.caption("🔇 Audio unavailable")
+                    else:
+                        st.caption("🔇 No audio")
+        
         st.markdown("---")
     else:
-        st.info("💡 Start a conversation in German! The AI will respond and help you learn.")
+        st.info("💡 Start a conversation in German! The AI will respond with audio and help you learn.")
+        
+        # Show conversation starters
+        with st.expander("💬 Need conversation starters?", expanded=False):
+            st.write(f"**Try these {level} level phrases:**")
+            # Get starters from conversation agent
+            from agents.conversation_practice import ConversationPracticeAgent
+            agent = ConversationPracticeAgent()
+            starters = agent.suggest_conversation_starters(level)
+            for starter in starters:
+                if st.button(f"💬 {starter}", key=f"starter_{starter}", use_container_width=True):
+                    st.session_state.conversation_input = starter
+                    st.rerun()
     
     # User input
     user_message = st.text_input(
         "✍️ Your message in German:", 
         key="conv_input",
-        placeholder="z.B. Guten Tag! Wie geht es Ihnen?"
+        placeholder="z.B. Guten Tag! Wie geht es Ihnen?",
+        value=st.session_state.get('conversation_input', '')
     )
+    
+    # Clear the prefilled input after use
+    if 'conversation_input' in st.session_state:
+        del st.session_state.conversation_input
     
     col1, col2 = st.columns([1, 4])
     
@@ -374,24 +419,34 @@ elif current_page == "💬 Conversation":
             'content': user_message
         })
         
-        with st.spinner("🤔 Thinking..."):
+        with st.spinner("🤔 Thinking and generating audio..."):
             result = run_async(
                 st.session_state.orchestrator.orchestrate_learning(
                     text=user_message,
                     level=level,
                     goal="conversation practice",
-                    context={"topic": scenario, "scenario": scenario}
+                    context={
+                        "topic": scenario, 
+                        "scenario": scenario,
+                        "generate_audio": enable_audio  # Pass audio preference
+                    }
                 )
             )
             
             if result and result['success']:
                 conv_data = result['comprehensive_lesson'].get('conversation_practice', {})
                 
-                st.session_state.conversation_history.append({
+                msg_data = {
                     'role': 'assistant',
                     'content': conv_data.get('suggested_response', 'Entschuldigung, ich verstehe nicht.'),
                     'translation': conv_data.get('translation', '')
-                })
+                }
+                
+                # Add audio file path if available
+                if conv_data.get('audio_file'):
+                    msg_data['audio_file'] = conv_data['audio_file']
+                
+                st.session_state.conversation_history.append(msg_data)
                 
                 run_async(st.session_state.progress_tracker.track_lesson_completion(result))
                 st.rerun()
