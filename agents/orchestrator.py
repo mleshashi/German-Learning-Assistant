@@ -219,15 +219,21 @@ class GermanLearningOrchestrator:
         if state["vocabulary_analysis"]:
             context["vocabulary_focus"] = list(state["vocabulary_analysis"].keys())
         
+        # Check if audio generation is requested (default to True)
+        generate_audio = context.get("generate_audio", True)
+        
         result = await self.conversation_agent.practice_conversation(
             state["original_text"],
             state["user_level"], 
-            context
+            context,
+            generate_audio=generate_audio  # Pass audio flag to agent
         )
         
         if result["success"]:
             state["conversation_response"] = result["response"]
             print(f"   ✅ Conversation practice generated")
+            if result["response"].get("has_audio"):
+                print(f"   🔊 Audio available")
         else:
             print(f"   ❌ Conversation practice failed: {result.get('error', 'Unknown error')}")
             state["conversation_response"] = {"error": result.get("error")}
