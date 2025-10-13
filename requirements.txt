@@ -2,19 +2,21 @@
 streamlit>=1.28.0
 python-dotenv>=1.0.0
 
-# Free AI APIs
+# AI & Orchestration
 groq>=0.4.0
+langgraph>=0.0.40
+langchain-core>=0.1.0
 
-# Memory & Caching
-redis>=4.5.0
-chromadb>=0.4.0
+# HTTP & API Calls
+aiohttp>=3.9.0
 
-# German Language Processing
-requests>=2.31.0
-
-# Audio Processing (Free TTS)
+# Text-to-Speech (German audio)
 edge-tts>=6.1.0
 
-# Development
+# Development & Testing
 pytest>=7.4.0
 black>=23.0.0
+
+# Memory & Caching
+# redis>=4.5.0
+# chromadb>=0.4.0
