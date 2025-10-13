@@ -53,6 +53,7 @@ st.markdown("""
     }
     .lesson-card {
         background-color: #ffffff;
+        color: #000000; /* Black text for contrast */
         padding: 1.5rem;
         border-radius: 10px;
         border-left: 4px solid #1f77b4;
