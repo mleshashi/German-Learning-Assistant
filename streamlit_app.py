@@ -18,7 +18,7 @@ from agents.progress_tracker import ProgressTracker
 
 # Page configuration
 st.set_page_config(
-    page_title="German Learning Assistant 🇩🇪",
+    page_title="German Learning Assistant",
     page_icon="🇩🇪",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -88,11 +88,11 @@ def run_async(coro):
         loop.close()
 
 # Main title
-st.markdown('<h1 class="main-header">🇩🇪 German Learning Assistant</h1>', unsafe_allow_html=True)
+st.markdown('<h1 class="main-header">German Learning Assistant</h1>', unsafe_allow_html=True)
 
 # Sidebar
 with st.sidebar:
-    st.title("🇩🇪 Navigation")
+    st.title("Navigation")
     
     page = st.radio(
         "Choose a section:",
@@ -631,7 +631,7 @@ st.markdown("---")
 st.markdown(
     """
     <div style='text-align: center; color: #666;'>
-        <p>🇩🇪 German Learning Assistant | Powered by LangGraph & Groq AI</p>
+        <p>German Learning Assistant | Powered by LangGraph & Groq AI</p>
         <p>Keep learning every day! 🚀</p>
     </div>
     """, 
