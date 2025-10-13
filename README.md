@@ -1,35 +1,48 @@
 # German Learning Assistant 🇩🇪
 
-AI-powered German language learning system with multi-agent architecture using completely free APIs.
+AI-powered German language learning app with multi-agent architecture.
+
 
 ## Architecture Overview
 
 ```
-┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
-│   Streamlit     │    │   German         │    │  Memory Cache   │
-│ Learning Portal │────│  Orchestrator    │────│ Redis +ChromaDB │
-└─────────────────┘    └──────────────────┘    └─────────────────┘
-                                │
-                    ┌───────────┼───────────┐
-                    ▼           ▼           ▼
-            ┌──────────┐ ┌─────────────┐ ┌──────────────┐
-            │Grammar   │ │Vocabulary   │ │Conversation  │
-            │Master    │ │Builder      │ │Practice      │
-            │Agent     │ │Agent        │ │Agent         │
-            └──────────┘ └─────────────┘ └──────────────┘
-                    │           │           │
-                    ▼           ▼           ▼
-            ┌──────────┐ ┌─────────────┐ ┌──────────────┐
-            │Groq Free │ │Wiktionary   │ │Text-to-Speech│
-            │MCP Server│ │Free MCP     │ │Free MCP      │
-            │          │ │Server       │ │Server        │
-            └──────────┘ └─────────────┘ └──────────────┘
+┌──────────────────────────────┐
+│        Streamlit UI          │
+│  (User interacts with app)   │
+└─────────────┬────────────────┘
+              │
+              ▼
+┌─────────────────────────────────────────────┐
+│      GermanLearningOrchestrator             │
+│  (Coordinates lesson generation & agents)   │
+└───────┬───────────────────────┬─────────────┘
+        │                       │
+        ▼                       ▼
+┌───────────────┐      ┌──────────────────────┐
+│ProgressTracker│      │    Multi-Agents      │
+│(Tracks user   │      │- Grammar Agent       │
+│ progress &    │      │- Vocabulary Agent    │
+│ plans lessons)│      │- Conversation Agent  │
+└───────────────┘      └──────────────────────┘
+        │                       │
+        └─────────────┬─────────┘
+                      ▼
+      ┌─────────────────────────────┐
+      │   Personalized Daily Lesson │
+      │   (Generated for user)      │
+      └─────────────────────────────┘
 ```
 
 ## Features
 
-### Specialized German Learning Agents
+- Streamlit dashboard for personalized lessons
+- Progress tracking and daily lesson generation
+- Grammar, vocabulary, and conversation agents
 
-- **Grammar Master Agent**: Explains German articles (der/die/das), cases, and verb conjugations
-- **Vocabulary Builder Agent**: Breaks down compound words, teaches word families, handles A1-C2 levels
-- **Conversation Practice Agent**: Simulates real German conversations with cultural context
+## Work in Progress
+
+- UI improvements
+- Memory cache (Redis & ChromaDB)
+- Multi-user scaling
+
+*This project is under active development. Stay tuned for updates!*
