@@ -1,15 +1,16 @@
 """
 Conversation Practice Agent - German Conversation Partner
 Simulates real German conversations with cultural context and corrections
+NOW WITH TEXT-TO-SPEECH SUPPORT!
 """
 
 import json
 from typing import Dict, Any, List, Optional
+from pathlib import Path
 from groq import Groq
 
 # Import our config
 import sys
-from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent))
 from config import get_api_config
 
@@ -18,6 +19,7 @@ class ConversationPracticeAgent:
     """
     Conversation partner for practicing German with cultural context
     Provides corrections, suggestions, and maintains conversation flow
+    Now includes text-to-speech audio generation!
     """
     
     def __init__(self):
@@ -27,6 +29,17 @@ class ConversationPracticeAgent:
         
         # Conversation memory (simple list for now)
         self.conversation_history = []
+        
+        # TTS helper (lazy load to avoid circular imports)
+        self._tts_helper = None
+    
+    @property
+    def tts_helper(self):
+        """Lazy load TTS helper"""
+        if self._tts_helper is None:
+            from agents.tts_helper import GermanTTSHelper
+            self._tts_helper = GermanTTSHelper()
+        return self._tts_helper
     
     def _create_conversation_prompt(self, user_message: str, level: str, context: Dict[str, Any] = None) -> str:
         """Create a conversation prompt for German practice"""
@@ -44,9 +57,11 @@ Conversation Context:
 
 User said: "{user_message}"
 
+CRITICAL: Your response must ALWAYS include a follow-up question to keep the conversation flowing naturally.
+
 Please respond in this JSON format:
 {{
-    "german_response": "Your natural German response to continue the conversation",
+    "german_response": "Your natural German response that ENDS WITH A QUESTION to continue the conversation",
     "english_translation": "English translation of your response",
     "corrections": [
         {{"error": "user's mistake", "correction": "corrected version", "explanation": "why this is better"}}
@@ -56,21 +71,32 @@ Please respond in this JSON format:
     ],
     "cultural_note": "Optional cultural context about Germany/Austria/Switzerland",
     "conversation_tips": ["tip1", "tip2"],
-    "suggested_responses": ["response option 1", "response option 2"]
+    "suggested_responses": ["response option 1 to your question", "response option 2 to your question"]
 }}
 
 Guidelines:
 - Respond naturally in German at {level} level
+- ALWAYS end your response with a question to keep conversation flowing
+- Make questions relevant to the topic and user's level
 - Give gentle corrections without being overwhelming
 - Include cultural context when relevant
-- Keep the conversation flowing naturally
-- Use appropriate formality level for the scenario"""
+- Use appropriate formality level for the scenario
+- Ask open-ended questions that encourage detailed responses
+- Vary your questions: use "Was", "Wie", "Warum", "Wo", "Wann", etc.
+
+Examples of good follow-up questions by level:
+- A1: "Und Sie? Was machen Sie gern?" (And you? What do you like to do?)
+- A2: "Wie war Ihr Wochenende?" (How was your weekend?)
+- B1: "Was denken Sie darüber?" (What do you think about that?)
+- B2: "Können Sie mir mehr darüber erzählen?" (Can you tell me more about that?)
+- C1: "Wie würden Sie diese Situation einschätzen?" (How would you assess this situation?)"""
 
     async def practice_conversation(
         self, 
         user_message: str, 
         level: str = "A1", 
-        context: Optional[Dict[str, Any]] = None
+        context: Optional[Dict[str, Any]] = None,
+        generate_audio: bool = True
     ) -> Dict[str, Any]:
         """
         Practice German conversation with corrections and help
@@ -79,9 +105,10 @@ Guidelines:
             user_message: User's German message
             level: CEFR level (A1-C2)
             context: Conversation context (topic, scenario, etc.)
+            generate_audio: Whether to generate TTS audio for the response
             
         Returns:
-            Dictionary with conversation response and learning aids
+            Dictionary with conversation response, learning aids, and optional audio
         """
         try:
             # Add to conversation history
@@ -129,10 +156,25 @@ Guidelines:
                     "level": level
                 })
                 
+                # Generate audio if requested
+                audio_file = None
+                if generate_audio and conversation_response.get("german_response"):
+                    try:
+                        german_text = conversation_response["german_response"]
+                        print(f"🔊 Generating audio for: '{german_text[:50]}...'")
+                        audio_file = await self.tts_helper.generate_speech(german_text)
+                        conversation_response["audio_file"] = str(audio_file)
+                        print(f"✅ Audio available: {audio_file.name}")
+                    except Exception as audio_error:
+                        print(f"⚠️  Audio generation failed: {audio_error}")
+                        conversation_response["audio_file"] = None
+                        conversation_response["audio_error"] = str(audio_error)
+                
                 # Add metadata
                 conversation_response["user_input"] = user_message
                 conversation_response["conversation_level"] = level
                 conversation_response["model_used"] = self.model
+                conversation_response["has_audio"] = audio_file is not None
                 
                 return {
                     "success": True,
@@ -147,7 +189,8 @@ Guidelines:
                         "german_response": "Entschuldigung, können Sie das wiederholen?",
                         "english_translation": "Sorry, can you repeat that?",
                         "raw_response": response_text,
-                        "note": "Response parsing failed, but conversation continues"
+                        "note": "Response parsing failed, but conversation continues",
+                        "has_audio": False
                     }
                 }
                 
@@ -212,29 +255,41 @@ Guidelines:
 
 # Test function
 async def test_conversation_practice():
-    """Test the Conversation Practice Agent"""
-    print("🧪 Testing Conversation Practice Agent...")
+    """Test the Conversation Practice Agent with TTS"""
+    print("🧪 Testing Conversation Practice Agent with TTS")
+    print("=" * 60)
     
     agent = ConversationPracticeAgent()
     
     try:
-        # Test conversation
-        test_message = "Hallo! Ich bin müde heute."
+        # Test conversation with audio
+        test_message = "Hallo! Ich bin heute müde."
         context = {
             "topic": "daily life",
             "scenario": "casual greeting"
         }
         
-        print(f"👤 User: '{test_message}'")
+        print(f"\n👤 User: '{test_message}'")
+        print("🔄 Generating conversation response with audio...")
         
-        result = await agent.practice_conversation(test_message, "A2", context)
+        result = await agent.practice_conversation(
+            test_message, 
+            "A2", 
+            context,
+            generate_audio=True  # Enable audio
+        )
         
         if result["success"]:
-            print("✅ Conversation successful!")
+            print("\n✅ Conversation successful!")
             response = result["response"]
             
-            print(f"🤖 Bot: {response.get('german_response', 'No response')}")
+            print(f"\n🤖 Bot: {response.get('german_response', 'No response')}")
             print(f"📝 Translation: {response.get('english_translation', 'No translation')}")
+            
+            if response.get("has_audio"):
+                print(f"🔊 Audio available: {response.get('audio_file')}")
+            else:
+                print("🔇 No audio generated")
             
             if response.get("corrections"):
                 print(f"✏️  Corrections: {len(response['corrections'])}")
@@ -243,19 +298,41 @@ async def test_conversation_practice():
                 print(f"📚 Vocabulary help: {len(response['vocabulary_help'])}")
             
             if response.get("cultural_note"):
-                print(f"🇩🇪 Cultural note: {response['cultural_note'][:50]}...")
+                print(f"🇩🇪 Cultural note: {response['cultural_note'][:60]}...")
+            
+            # Test without audio
+            print("\n" + "=" * 60)
+            print("\n🔇 Testing without audio generation...")
+            result_no_audio = await agent.practice_conversation(
+                "Danke schön!",
+                "A2",
+                context,
+                generate_audio=False  # Disable audio
+            )
+            
+            if result_no_audio["success"]:
+                print(f"✅ Response without audio: {result_no_audio['response'].get('german_response', '')[:50]}...")
+                print(f"🔇 Has audio: {result_no_audio['response'].get('has_audio', False)}")
         
         else:
             print(f"❌ Conversation failed: {result.get('error', 'Unknown error')}")
         
         # Test conversation starters
+        print("\n" + "=" * 60)
         starters = agent.suggest_conversation_starters("A2")
-        print(f"💡 Conversation starters for A2: {len(starters)}")
+        print(f"\n💡 Conversation starters for A2: {len(starters)}")
+        for i, starter in enumerate(starters[:3], 1):
+            print(f"   {i}. {starter}")
+        
+        print("\n" + "=" * 60)
+        print("🎉 All tests passed!")
         
         return result["success"]
         
     except Exception as e:
-        print(f"❌ Test failed: {e}")
+        print(f"\n❌ Test failed: {e}")
+        import traceback
+        traceback.print_exc()
         return False
 
 
